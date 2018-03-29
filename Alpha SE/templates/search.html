@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Alpha Go "{{ request }}" - Found {{ num }} results</title>
+    <link rel="stylesheet" href="{{ url_for('.static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='css/main.css') }}">
+</head>
+<body>
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <img src="{{ url_for('.static', filename='img/logo.jpg') }}" class="logo" width="5%" height="5%">
+        <div class="col-md6 offset-md3">
+            <form action="/search">
+                <div class="input-group input">
+                    <input type="text" name="req" class="form-control" value="{{ request }}" aria-label=""
+                           aria-describedby="basic-addon1">
+                    <input type="submit" class="btn btn-outline-primary" value="Go">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<br>
+<br>
+<div class="container">
+    <div class="row"></div>
+    {% for item in results %}
+        <p class="lead"><a href="{{ item['url'] }}">{{ item['head'] }}</a><br>{{ item['body'] }}</p>
+        <div class="w-100"></div>
+    {% endfor %}
+</div>
+<div class="container">
+    <p>
+        <small>Found {{ num }} results by request «{{ request }}»</small>
+    </p>
+</div>
+</body>
+</html>
