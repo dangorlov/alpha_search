@@ -5,7 +5,7 @@ except: print('SearchEngine import failed. Only demo functionality')
 app = Flask(__name__,template_folder='templates')
 
 def WriteData(pth, request):
-    f = open('page_rang.dat', 'a')
+    f = open('click_stat.dat', 'a')
     f.write("{0}\t{1}\n".format(request, pth))
     f.close()
 page_rank={}
