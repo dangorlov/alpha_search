@@ -1,5 +1,6 @@
 from flask import *
 from indexer import indexing
+from spider import spider
 from config import *
 
 app = Flask(__name__)
@@ -33,6 +34,7 @@ def go():
 
 
 if __name__ == '__main__':
-    app.run(HTTP_IP, port=HTTP_PORT)
+    spider.run()
+    # app.run(HTTP_IP, port=HTTP_PORT)
     # indexing.run('simple9', 'data/lenta.ru_4deb864d-3c46-45e6-85f4-a7ff7544a3fb_01.gz')
     pass

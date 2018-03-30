@@ -8,13 +8,14 @@ import time
 from collections import defaultdict
 import json
 import re
+from boilerpipe import boiler
 
 
 class Crawler(Thread):
-    init_url = 'https://ru.wikipedia.org/'
-    anchor = "wikipedia.org"
-    anchor_end = ".wikipedia.org"
-    restricted_hosts = ["m.wikipedia.org"]
+    init_url = 'https://lenta.ru/'
+    anchor = "lenta.ru"
+    anchor_end = ".lenta.ru"
+    restricted_hosts = ["m.lenta.ru"]
 
     output_dir = 'root'
     debug = True
@@ -40,7 +41,7 @@ class Crawler(Thread):
 
         self.working = True
         super().__init__(target=self.run)
-        # self.get_disallow()
+        self.get_disallow()
         self.lock = Lock()
         self.start()
         self.go(self.max_depth)
@@ -127,6 +128,9 @@ class Crawler(Thread):
                 self.visited.add(url)
                 with open("{0}/{1}.html".format(self.output_dir, self.id), "wb") as f:
                     f.write(html)
+
+                boiler.handle(self.output_dir, str(self.id))
+
                 if self.debug:
                     print("{0}\t{1}".format(self.id, url))
                 self.id += 1
@@ -139,7 +143,8 @@ class Crawler(Thread):
         return self.index
 
 
-crawler = Crawler()
+def run():
+    crawler = Crawler()
 
-with open("index.json", "w") as ind:
-    json.dump(crawler.index, ind, indent=2)
+    with open("index.json", "w") as ind:
+        json.dump(crawler.index, ind, indent=2)

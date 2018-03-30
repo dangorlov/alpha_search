@@ -18,13 +18,12 @@ class DocumentStreamReader:
             with self.open_single(path.rstrip()) as stream:
                 while True:
                     sb = stream.read(4)
-                    if sb == '':
+                    if sb == b'':
                         break
 
                     size = struct.unpack('i', sb)[0]
                     msg = stream.read(size)
                     doc = document_pb2.document()
-                    doc.Clear = lambda *_: None
                     doc.ParseFromString(msg)
                     yield doc
 

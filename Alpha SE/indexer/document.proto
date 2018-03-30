@@ -1,7 +1,9 @@
-package go.mail.ru;
+syntax = "proto3";
+
+package go.alphase.ru;
 
 message document {
-    required string url = 1;
-    optional string body = 2;
-    optional string text = 3;
+    string url = 1;
+    string body = 2;
+    string text = 3;
 }

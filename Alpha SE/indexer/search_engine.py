@@ -76,7 +76,7 @@ class SearchIndex:
         self.file.close()
 
 
-if __name__ == '__main__':
+def run():
     path = './temp_idx/'
     with open(path + 'encoding.ini', 'r') as f_config:
         encoding = f_config.readline()

@@ -31,19 +31,18 @@ def write_index_partition(filename_pattern, index, encoding):
     clear_index(index)
 
 
-def run(encoding_method, *files):
+def run(encoding_method, files):
     path = './temp_idx/'
     if not os.path.exists(path):
         os.makedirs(path)
     index, url_list = {}, []
-    reader = DocumentStreamReader(files)
     current_partition_id = 0
 
     index_is_empty = True
-    for doc_idx, doc in enumerate(reader):
+    for doc_idx, doc in files:
         index_is_empty = False
-        url_list.append(doc.url + '\n')
-        terms = set(extract_words(doc.text))
+        url_list.append(doc['url'] + '\n')
+        terms = set(extract_words(doc['text']))
         for term in terms:
             key = hash(term)
             if key in index:
