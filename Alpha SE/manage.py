@@ -2,6 +2,7 @@ from flask import *
 from indexer import indexing
 from indexer import build_index, dict_optimization
 from indexer.search_engine import *
+from indexer import doc2words
 from spider import spider
 from config import *
 import json
@@ -42,7 +43,8 @@ def op(fp):
 
 
 def query_search(req):
-    print(req[:-1])
+    req = doc2words.normal(req)
+    print(req)
     query_string = query_stack.process(req)
     results = query_string.get_query_urls(len(url_list))
 
@@ -56,12 +58,12 @@ if __name__ == '__main__':
     # app.run(HTTP_IP, port=HTTP_PORT)
 
     # Build index
-    with open('index.json') as f:
-        index = json.load(f)
-    files = [(int(i), {'url': url, 'text': op('root/' + i + '.txt')}) for i, url in zip(index, index.values())]
-    indexing.run('simple9', files)
-    build_index.run()
-    dict_optimization.run()
+    # with open('index.json') as f:
+    #     index = json.load(f)
+    # files = [(int(i), {'url': url, 'text': op('root/' + i + '.txt')}) for i, url in zip(index, index.values())]
+    # indexing.run('simple9', files)
+    # build_index.run()
+    # dict_optimization.run()
 
     # Search engine
     path = './temp_idx/'
@@ -73,4 +75,4 @@ if __name__ == '__main__':
         url_list = [url[:-1] for url in url_list]
     query_stack = QueryProcessor(index)
 
-    query_search('test')
+    query_search('Британецы')

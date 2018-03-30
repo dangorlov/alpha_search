@@ -13,11 +13,11 @@ from boilerpipe import boiler
 
 class Crawler(Thread):
     init_url = 'https://lenta.ru/'
-    anchor = "lenta.ru"
+    anchor = "*"
     anchor_end = ".lenta.ru"
     restricted_hosts = ["m.lenta.ru"]
 
-    output_dir = 'root'
+    output_dir = 'html'
     debug = True
 
     delay = 0.05
@@ -62,7 +62,7 @@ class Crawler(Thread):
         s = urllib.parse.urlparse(combined_url)
         if s.netloc in self.restricted_hosts:
             return
-        if s.netloc == self.anchor or s.netloc.endswith(self.anchor_end):
+        if s.netloc == self.anchor or s.netloc.endswith(self.anchor_end) or self.anchor == '*':
             return combined_url
 
     def get_disallow(self):
@@ -126,7 +126,7 @@ class Crawler(Thread):
                 self.bag += children_urls
                 self.index[self.id] = url
                 self.visited.add(url)
-                with open("{0}/{1}.html".format(self.output_dir, self.id), "wb") as f:
+                with open("{0}/{1}".format(self.output_dir, self.id), "wb") as f:
                     f.write(html)
 
                 boiler.handle(self.output_dir, str(self.id))

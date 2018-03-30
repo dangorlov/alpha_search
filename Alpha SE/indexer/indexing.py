@@ -1,10 +1,16 @@
-import os
 
+import mmh3
 from .binary_encoders import encode_sequence
 from .doc2words import extract_words
-from .docreader import *
+
+import os
+import json
+import struct
+from bs4 import BeautifulSoup
 
 index_partition_size = 500000
+INDEX_PATH = 'temp_idx'
+HTML_PATH = 'html'
 
 
 def clear_index(index):
@@ -31,34 +37,57 @@ def write_index_partition(filename_pattern, index, encoding):
     clear_index(index)
 
 
+def parse_index_header(path):
+    with open(path, 'r', encoding='utf-8') as index_hdr:
+        index_object = json.load(index_hdr)
+    return index_object
+
+
+def get_snippet(doc_id, term, edge=100):
+    with open(os.path.join(HTML_PATH, '{0}'.format(doc_id)), 'r', encoding='utf-8') as html:
+        soup = BeautifulSoup(html.read())
+        title = soup.head.title.string
+        text = get_doctext(doc_id)
+        pos = text.index(term)
+        begin = pos - edge if pos - edge >= 0 else 0
+        end = pos + edge if pos + edge <= len(text) else len(text)
+        snippet = text[begin:end]
+    return title, snippet
+
+
+def get_doctext(doc_id):
+    with open(os.path.join('root/', '{0}.txt'.format(doc_id)), 'r', encoding='cp1251') as textfile:
+        text = textfile.read()
+        return text
+
+
 def run(encoding_method, files):
-    path = './temp_idx/'
-    if not os.path.exists(path):
-        os.makedirs(path)
     index, url_list = {}, []
     current_partition_id = 0
 
-    index_is_empty = True
     for doc_idx, doc in files:
-        index_is_empty = False
+        doc_idx = int(doc_idx)
+        text = get_doctext(doc_idx)
         url_list.append(doc['url'] + '\n')
-        terms = set(extract_words(doc['text']))
+        terms = set(extract_words(text))
+        if len(terms) == 0:
+            # print('Document {0} is empty'.format(doc_idx))
+            continue
         for term in terms:
-            key = hash(term)
+            key = mmh3.hash64(term)[0]
             if key in index:
                 index[key].append(doc_idx)
             else:
                 # Zero index is used for delta computation for first document in sequence
                 index[key] = [0, doc_idx]
         if (doc_idx + 1) % index_partition_size == 0:
-            filename = '{0}part{1:03d}'.format(path, current_partition_id)
+            filename = os.path.join(INDEX_PATH, 'part{0:03d}'.format(current_partition_id))
             write_index_partition(filename, index, encoding_method)
             current_partition_id += 1
-            index_is_empty = True
-    if not index_is_empty:
-        write_index_partition(path + 'part{0:03d}'.format(current_partition_id), index, encoding_method)
+    filename = os.path.join(INDEX_PATH, 'part{0:03d}'.format(current_partition_id))
+    write_index_partition(filename, index, encoding_method)
 
-    with open(path + 'encoding.ini', 'w') as config_file:
+    with open(os.path.join(INDEX_PATH, 'encoding.ini'), 'w') as config_file:
         config_file.write(encoding_method)
-    with open(path + 'url_list', 'w') as f:
+    with open(os.path.join(INDEX_PATH, 'url_list'), 'w') as f:
         f.writelines(url_list)
