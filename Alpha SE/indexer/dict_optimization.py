@@ -21,7 +21,7 @@ def optimize_term_dict(term_dict, filename, buckets_count):
                 dict_file.write(struct.pack('q2I', key, offset, seq_len))
 
 
-if __name__ == '__main__':
+def run():
     entire_dict_filename = './temp_idx/terms_dict'
     with open(entire_dict_filename, 'rb') as term_dict_file:
         terms_count = struct.unpack("Q", term_dict_file.read(8))[0]

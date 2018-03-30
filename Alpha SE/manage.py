@@ -1,7 +1,10 @@
 from flask import *
 from indexer import indexing
+from indexer import build_index, dict_optimization
+from indexer.search_engine import *
 from spider import spider
 from config import *
+import json
 
 app = Flask(__name__)
 app.config.from_object(Configuration)
@@ -33,8 +36,41 @@ def go():
     return redirect(request.args.get('url'), code=301)
 
 
+def op(fp):
+    with open(fp, 'r', encoding='cp1251') as fl:
+        return fl.read()
+
+
+def query_search(req):
+    print(req[:-1])
+    query_string = query_stack.process(req)
+    results = query_string.get_query_urls(len(url_list))
+
+    print(len(results))
+    for doc_url_idx in results:
+        print(url_list[doc_url_idx])
+
+
 if __name__ == '__main__':
-    spider.run()
+    # spider.run()
     # app.run(HTTP_IP, port=HTTP_PORT)
-    # indexing.run('simple9', 'data/lenta.ru_4deb864d-3c46-45e6-85f4-a7ff7544a3fb_01.gz')
-    pass
+
+    # Build index
+    with open('index.json') as f:
+        index = json.load(f)
+    files = [(int(i), {'url': url, 'text': op('root/' + i + '.txt')}) for i, url in zip(index, index.values())]
+    indexing.run('simple9', files)
+    build_index.run()
+    dict_optimization.run()
+
+    # Search engine
+    path = './temp_idx/'
+    with open(path + 'encoding.ini', 'r') as f_config:
+        encoding = f_config.readline()
+    index = SearchIndex(path + 'entire_index', path + 'terms_dict', encoding)
+    with open(path + 'url_list', 'r') as urls_filename:
+        url_list = urls_filename.readlines()
+        url_list = [url[:-1] for url in url_list]
+    query_stack = QueryProcessor(index)
+
+    query_search('test')

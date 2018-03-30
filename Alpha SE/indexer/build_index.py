@@ -2,6 +2,7 @@ import os
 
 from .docreader import *
 import sys
+import functools
 
 
 def read_term_dict_partitions(dict_filenames):
@@ -51,13 +52,12 @@ def write_entire_term_dict(dict_filename, all_terms):
             entire_dict_file.write(struct.pack("qII", key, offset, seq_len))
 
 
-if __name__ == '__main__':
+def run():
     input_files = []
     path = './temp_idx/'
     for input_filename in os.listdir(path):
         if input_filename.endswith(".dct"):
             input_files += [path + input_filename]
-            continue
         else:
             continue
 
@@ -79,13 +79,13 @@ if __name__ == '__main__':
         os.rename(dict_filename, entire_dict_filename)
         os.rename(index_filename, entire_index_filename)
         sys.stderr.write("Index is built successfully (quick)\n")
-        exit(0)
+        return
 
     term_dict_filenames = input_files
     index_filenames = [filename[:-4] + '.idx' for filename in input_files]
 
     dict_partitions = read_term_dict_partitions(term_dict_filenames)
-    all_terms_keys = reduce(lambda x, y: x | y, [set(partition.keys()) for partition in dict_partitions])
+    all_terms_keys = functools.reduce(lambda x, y: x | y, [set(partition.keys()) for partition in dict_partitions])
     all_terms = write_entire_index(index_filenames, entire_index_filename, all_terms_keys, dict_partitions)
     write_entire_term_dict(entire_dict_filename, all_terms=all_terms)
 

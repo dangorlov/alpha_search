@@ -8,27 +8,30 @@ import numpy as np
 from .binary_encoders import decode_sequence
 from .query_processing import *
 from bisect import bisect_left
+import mmhash
 
 
 class TermDictionary:
     def __init__(self, dict_filename):
-        self.file = open(dict_filename, 'rb')
-        self.buckets_count = struct.unpack("I", self.file.read(4))[0]
-        self.buckets_size = list(struct.unpack("{0}I".format(self.buckets_count),
-                                               self.file.read(4 * self.buckets_count)))
-        self.buckets = []
-        for bucket_idx in range(self.buckets_count):
-            current_bucket = np.asarray(struct.unpack(
-                'q2I' * self.buckets_size[bucket_idx],
-                self.file.read((8 + 4 + 4) * self.buckets_size[bucket_idx])
-            )).reshape(-1, 3)
-            self.buckets.append(current_bucket)
-        self.file.close()
+        with open(dict_filename, 'rb') as f:
+            print(len(f.read()))
+        with open(dict_filename, 'rb') as f:
+            self.buckets_count = struct.unpack("I", f.read(4))[0]
+            print(self.buckets_count)
+            self.buckets_size = list(struct.unpack("{0}I".format(self.buckets_count),
+                                                   f.read(4 * self.buckets_count)))
+            self.buckets = []
+            for bucket_idx in range(self.buckets_count):
+                current_bucket = np.asarray(struct.unpack(
+                    'q2I' * self.buckets_size[bucket_idx],
+                    f.read((8 + 4 + 4) * self.buckets_size[bucket_idx])
+                )).reshape(-1, 3)
+                self.buckets.append(current_bucket)
 
     def find(self, item):
-        bucket_idx = hash(item) % self.buckets_count
+        bucket_idx = mmhash.get_hash(item) % self.buckets_count
         target_bucket = self.buckets[bucket_idx]
-        term_idx = TermDictionary.__binary_search(target_bucket[:, 0], hash(item))
+        term_idx = TermDictionary.__binary_search(target_bucket[:, 0], mmhash.get_hash(item))
         offset, n_bytes = target_bucket[term_idx, 1], target_bucket[term_idx, 2]
         return offset, n_bytes
 
