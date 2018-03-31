@@ -9,7 +9,6 @@ from collections import defaultdict
 import json
 import re
 from boilerpipe import boiler
-from manage import generate_index
 
 
 class Crawler(Thread):
@@ -143,8 +142,9 @@ class Crawler(Thread):
                 if not self.id % self.save_freq and self.id:
                     with open("index.json", "w") as ind:
                         json.dump(self.index, ind, indent=2)
-                    with self.lock:
-                        generate_index(self.index)
+                    with open('last_ind.tmp', 'w') as last:
+                        last.write(str(self.id - 1))
+                    # generate_index(self.index)
                 time.sleep(self.delay)
                 self.max_pages -= 1
                 if self.max_pages <= 0:

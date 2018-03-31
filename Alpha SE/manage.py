@@ -12,11 +12,6 @@ app.config.from_object(Configuration)
 
 @app.route('/')
 def index():
-    return redirect(url_for('alpha_se'))
-
-
-@app.route('/gsearch')
-def alpha_se():
     examples = [i for i in doc2words.dct]
     if len(examples):
         ex = random.choice(examples)
@@ -31,16 +26,17 @@ def search():
     if req is None:
         abort(418)
     res = []
-    for r in req.split():
+    for url in query_search(doc2words.normal(req).replace(' ', ' & ')):
+        if len(res) >= 20:
+            break
         try:
-            for url in query_search(r):
-                snippet = indexing.get_snippet(url, doc2words.normal(req))
-                res.append({'url': url_list[url], 'head': snippet[0], 'body': snippet[1]})
+            snippet = indexing.get_snippet(url, doc2words.normal(req))
+            res.append({'url': url_for('go', url=url_list[url]), 'head': snippet[0], 'body': snippet[1]})
         except:
             pass
     return render_template('search.html',
                            request=req,
-                           num=len(res),
+                           num=len(res) if len(res) < 20 else '20+',
                            results=res)
 
 
@@ -56,7 +52,6 @@ def op(fp):
 
 
 def query_search(req):
-    req = doc2words.normal(req)
     query_string = query_stack.process(req)
     results = query_string.get_query_urls(len(url_list))
 
@@ -74,7 +69,17 @@ def generate_index(ind):
 
 if __name__ == '__main__':
     from spider.spider import CrawlerRunner
-    CrawlerRunner()
+    c = CrawlerRunner()
+
+    try:
+        with open('last_ind.tmp') as f:
+            last_ind = f.read()
+        if last_ind != max(c.crawler.index, key=lambda x: int(x)):
+            generate_index(c.crawler.index)
+    except FileNotFoundError:
+        generate_index(c.crawler.index)
+        with open('last_ind.tmp', 'w') as f:
+            f.write('0')
 
     # Search engine
     path = './temp_idx/'
@@ -86,5 +91,4 @@ if __name__ == '__main__':
         url_list = [url[:-1] for url in url_list]
     query_stack = QueryProcessor(index)
 
-    # print(indexing.get_snippet(list(query_search('Британецы'))[0], doc2words.normal('Британецы')))
     app.run(HTTP_IP, port=HTTP_PORT)
