@@ -4,7 +4,7 @@ import pymorphy2
 SPLIT_RGX = re.compile(r'\w+', re.U)
 
 
-class MyDict(dict):
+class NormalDict(dict):
 
     def __init__(self):
         super().__init__()
@@ -18,7 +18,7 @@ class MyDict(dict):
             return self.morph.normal_forms(item)[0]
 
 
-dct = MyDict()
+dct = NormalDict()
 
 
 def normal(s):

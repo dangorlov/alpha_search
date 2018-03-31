@@ -7,25 +7,40 @@
     <link rel="stylesheet" href="{{ url_for('.static', filename='css/bootstrap.min.css') }}">
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  	<a class="navbar-brand" href="/">Alpha Gate</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar1"
+                aria-controls="navbar1" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-<h4 align="center" class="display-4">Alpha Go</h4>
-<br><br><br>
-<form action="/search">
-    <div class="mx-auto col col-lg-5">
-        <div class="input-group mb-3">
-
-            <input type="text" name="req" class="form-control" placeholder="Try to write something..."
-                   aria-label="Try to write something..."
-                   aria-describedby="basic-addon1">
-            <button type="submit" class="btn btn-outline-primary">Go</button>
-
+        <div class="collapse navbar-collapse navbar-light" id="navbar1">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/search">Alpha Search<span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/weather">Beta Weather</a>
+                </li>
+            </ul>
         </div>
-    </div>
-</form>
+    </nav>
+    <img src="{{ url_for('.static', filename='img/logo.jpg') }}" style="width: 25%; height: 25%" class="rounded mx-auto d-block" alt="Alpha Search Engine">
 
+    <h4 align="center" class="display-4">Alpha SE</h4>
+    <br><br><br>
+    <form action="/search">
+    <div class="mx-auto col col-lg-5">
+       <div class="input-group mb-3">
+
+             <input type="text" name="req" class="form-control" placeholder="{{ exmp }}" aria-label="{{ exmp }}" aria-describedby="basic-addon1">
+             <input type="submit" class="btn btn-outline-primary" value="Go">
+
+       </div>
+    </div>
+    </form>
 <script src="{{ url_for('.static', filename='js/jquery.min.js') }}"></script>
 <script src="{{ url_for('.static', filename='js/popper.min.js') }}"></script>
 <script src="{{ url_for('.static', filename='js/bootstrap.min.js') }}"></script>
-
 </body>
 </html>

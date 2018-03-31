@@ -3,9 +3,8 @@ from indexer import indexing
 from indexer import build_index, dict_optimization
 from indexer.search_engine import *
 from indexer import doc2words
-from spider import spider
 from config import *
-import json
+import random
 
 app = Flask(__name__)
 app.config.from_object(Configuration)
@@ -13,20 +12,34 @@ app.config.from_object(Configuration)
 
 @app.route('/')
 def index():
-    return render_template('main.html')
+    return redirect(url_for('alpha_se'))
+
+
+@app.route('/gsearch')
+def alpha_se():
+    examples = [i for i in doc2words.dct]
+    if len(examples):
+        ex = random.choice(examples)
+    else:
+        ex = 'Поиск...'
+    return render_template('main.html', exmp=ex)
 
 
 @app.route('/search')
 def search():
-    res = [
-        {
-            'url': url_for('go', url='https://mail.ru'),
-            'head': 'Mail.ru',
-            'body': 'some text'
-        }
-    ]
+    req = request.args.get('req')
+    if req is None:
+        abort(418)
+    res = []
+    for r in req.split():
+        try:
+            for url in query_search(r):
+                snippet = indexing.get_snippet(url, doc2words.normal(req))
+                res.append({'url': url_list[url], 'head': snippet[0], 'body': snippet[1]})
+        except:
+            pass
     return render_template('search.html',
-                           request=request.args.get('req'),
+                           request=req,
                            num=len(res),
                            results=res)
 
@@ -44,26 +57,24 @@ def op(fp):
 
 def query_search(req):
     req = doc2words.normal(req)
-    print(req)
     query_string = query_stack.process(req)
     results = query_string.get_query_urls(len(url_list))
 
-    print(len(results))
     for doc_url_idx in results:
-        print(url_list[doc_url_idx])
+        yield doc_url_idx
+
+
+def generate_index(ind):
+    print('Генерация индекса...')
+    files = [(int(i), {'url': url, 'text': op('root/' + str(i) + '.txt')}) for i, url in zip(ind, ind.values())]
+    indexing.run('simple9', files)
+    build_index.run()
+    dict_optimization.run()
 
 
 if __name__ == '__main__':
-    # spider.run()
-    # app.run(HTTP_IP, port=HTTP_PORT)
-
-    # Build index
-    # with open('index.json') as f:
-    #     index = json.load(f)
-    # files = [(int(i), {'url': url, 'text': op('root/' + i + '.txt')}) for i, url in zip(index, index.values())]
-    # indexing.run('simple9', files)
-    # build_index.run()
-    # dict_optimization.run()
+    from spider.spider import CrawlerRunner
+    CrawlerRunner()
 
     # Search engine
     path = './temp_idx/'
@@ -75,4 +86,5 @@ if __name__ == '__main__':
         url_list = [url[:-1] for url in url_list]
     query_stack = QueryProcessor(index)
 
-    query_search('Британецы')
+    # print(indexing.get_snippet(list(query_search('Британецы'))[0], doc2words.normal('Британецы')))
+    app.run(HTTP_IP, port=HTTP_PORT)

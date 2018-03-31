@@ -2,7 +2,7 @@
 
 class Configuration(object):
     SECRET_KEY = 'jdwkwadhiwadkjawdnwkaldd'
-    DEBUG = True
+    DEBUG = False
     SESSION_COOKIE_HTTPONLY = False
     TEMPLATES_AUTO_RELOAD = True
     SESSION_COOKIE_NAME = 'session'

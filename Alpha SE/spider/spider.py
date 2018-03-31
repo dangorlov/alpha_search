@@ -9,13 +9,16 @@ from collections import defaultdict
 import json
 import re
 from boilerpipe import boiler
+from manage import generate_index
 
 
 class Crawler(Thread):
-    init_url = 'https://lenta.ru/'
+    init_url = 'https://mail.ru/'
     anchor = "*"
-    anchor_end = ".lenta.ru"
-    restricted_hosts = ["m.lenta.ru"]
+    anchor_end = ".mail.ru"
+    restricted_hosts = ["m.mail.ru"]
+
+    save_freq = 100
 
     output_dir = 'html'
     debug = True
@@ -24,28 +27,30 @@ class Crawler(Thread):
     max_depth = 32
     timeout = 2.0
     max_attempts = 10
-    max_pages = 30
+    max_pages = 3000
 
     repeat_start_time = 60
     repeat_max_time = 60*60
     delta = 2
+    id = 0
+    index = {}
+    visited = set()
 
     def __init__(self):
         self.repeat_attempt = defaultdict(lambda: [self.repeat_start_time / self.delta, 0])
-        self.visited = set()
-        self.id = 0
-        self.index = {}
 
         self.bag = [self.init_url]
         self.disallow = set()
 
         self.working = True
         super().__init__(target=self.run)
-        self.get_disallow()
+        # self.get_disallow()
         self.lock = Lock()
         self.start()
         self.go(self.max_depth)
         self.working = False
+
+        self.max_thread = 8
 
     def run(self):
         while self.working or len(self.repeat_attempt):
@@ -98,11 +103,12 @@ class Crawler(Thread):
                     self.repeat_attempt[url][0] *= self.delta
                     self.repeat_attempt[url][1] = time.time()
                 return False, '', list()
-            except socket.timeout:
+            except socket.timeout as e:
                 self.repeat_attempt[url][0] *= self.delta
                 self.repeat_attempt[url][1] = time.time()
+                print(str(e))
                 return False, '', list()
-            except URLError as e:
+            except (URLError, UnicodeEncodeError) as e:
                 print(e)
                 return False, '', list()
         else:
@@ -113,7 +119,7 @@ class Crawler(Thread):
         if current_depth <= 0:
             return self.index
         for i, url in enumerate(self.bag.copy()):
-            if url in self.visited:
+            if url in self.visited and len(self.bag) != 1:
                 continue
             for dis in self.disallow:
                 if len(re.findall(dis, url)):
@@ -134,6 +140,11 @@ class Crawler(Thread):
                 if self.debug:
                     print("{0}\t{1}".format(self.id, url))
                 self.id += 1
+                if not self.id % self.save_freq and self.id:
+                    with open("index.json", "w") as ind:
+                        json.dump(self.index, ind, indent=2)
+                    with self.lock:
+                        generate_index(self.index)
                 time.sleep(self.delay)
                 self.max_pages -= 1
                 if self.max_pages <= 0:
@@ -143,8 +154,23 @@ class Crawler(Thread):
         return self.index
 
 
-def run():
-    crawler = Crawler()
+class CrawlerRunner(Thread):
 
-    with open("index.json", "w") as ind:
-        json.dump(crawler.index, ind, indent=2)
+    def __init__(self):
+        super().__init__(target=self.run)
+        self.crawler = Crawler
+        try:
+            with open('index.json') as f:
+                index = json.load(f)
+            ids = max(index, key=lambda x: int(x))
+            self.crawler.id = int(ids)
+            self.crawler.init_url = index[ids]
+            self.crawler.index = index
+            self.crawler.visited = set(index.values())
+        except FileNotFoundError:
+            pass
+        self.start()
+
+    def run(self):
+        print('Запуск паука...')
+        self.crawler()

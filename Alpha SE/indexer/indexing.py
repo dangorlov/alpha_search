@@ -44,15 +44,20 @@ def parse_index_header(path):
 
 
 def get_snippet(doc_id, term, edge=100):
-    with open(os.path.join(HTML_PATH, '{0}'.format(doc_id)), 'r', encoding='utf-8') as html:
-        soup = BeautifulSoup(html.read())
-        title = soup.head.title.string
-        text = get_doctext(doc_id)
-        pos = text.index(term)
-        begin = pos - edge if pos - edge >= 0 else 0
-        end = pos + edge if pos + edge <= len(text) else len(text)
-        snippet = text[begin:end]
-    return title, snippet
+    title = "Untitled"
+    text = ""
+    try:
+        with open(os.path.join(HTML_PATH, '{0}'.format(doc_id)), 'r', encoding='utf-8') as html:
+            soup = BeautifulSoup(html.read(), 'lxml')
+            title = soup.head.title.string
+            text = get_doctext(doc_id)
+            pos = extract_words(text).index(term)
+            begin = pos - edge if pos - edge >= 0 else 0
+            end = pos + edge if pos + edge <= len(text) else len(text)
+            snippet = text[begin:end]
+    except ValueError:
+        snippet = text[:edge * 2]
+    return title, snippet.replace('\n', ' ').replace('\r', '')
 
 
 def get_doctext(doc_id):
@@ -62,6 +67,9 @@ def get_doctext(doc_id):
 
 
 def run(encoding_method, files):
+    path = './temp_idx/'
+    if not os.path.exists(path):
+        os.makedirs(path)
     index, url_list = {}, []
     current_partition_id = 0
 
